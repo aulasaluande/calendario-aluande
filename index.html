@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluandê - Calendário de Aulas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --aluande-blue: #0019B8; 
+            --aluande-bg: #ffffff;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f4f7f6;
+        }
+        .text-aluande { color: var(--aluande-blue); }
+        .bg-aluande { background-color: var(--aluande-blue); }
+        .border-aluande { border-color: var(--aluande-blue); }
+        
+        .class-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .class-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 25, 184, 0.1);
+            transform: translateY(-2px);
+        }
+        .search-focus:focus {
+            ring: 2px;
+            ring-color: var(--aluande-blue);
+            outline: none;
+            border-color: var(--aluande-blue);
+        }
+        .lang-btn.active {
+            background-color: var(--aluande-blue);
+            color: white;
+            border-color: var(--aluande-blue);
+        }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen">
+
+    <!-- Seletor de Idioma Superior -->
+    <div class="bg-slate-100 py-2 border-b border-slate-200">
+        <div class="container mx-auto px-4 flex justify-end gap-2">
+            <button onclick="changeLang('pt')" id="btn-pt" class="lang-btn px-3 py-1 rounded-md text-xs font-bold border border-slate-300 hover:border-aluande transition-all active">PT</button>
+            <button onclick="changeLang('es')" id="btn-es" class="lang-btn px-3 py-1 rounded-md text-xs font-bold border border-slate-300 hover:border-aluande transition-all">ES</button>
+            <button onclick="changeLang('en')" id="btn-en" class="lang-btn px-3 py-1 rounded-md text-xs font-bold border border-slate-300 hover:border-aluande transition-all">EN</button>
+        </div>
+    </div>
+
+    <!-- Cabeçalho e Logo -->
+    <nav class="bg-white border-b border-slate-100 py-4 sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <img src="logo_alterada.jpg" alt="Logo Grupo Aluandê" class="h-16 w-16 object-contain rounded-full border-2 border-slate-50">
+                <div>
+                    <h1 class="text-2xl font-bold text-aluande leading-none">Aluandê</h1>
+                    <p id="sub-header" class="text-slate-400 text-sm font-medium tracking-wide uppercase">CAPOEIRA ANGOLA</p>
+                </div>
+            </div>
+            
+            <!-- Barra de Busca -->
+            <div class="relative w-full md:w-96">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" id="searchInput" placeholder="Filtrar por instrutor, cidade..." 
+                    class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full search-focus text-sm transition-all">
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Legendas -->
+        <div id="legends" class="flex flex-wrap gap-4 mb-8 justify-center">
+            <!-- Gerado dinamicamente -->
+        </div>
+
+        <!-- Grade de Dias -->
+        <div id="calendarGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+        <!-- Estado Vazio -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 id="empty-title" class="mt-2 text-sm font-medium text-slate-900">Nenhuma aula encontrada</h3>
+            <p id="empty-desc" class="mt-1 text-sm text-slate-500">Tente buscar por um termo diferente.</p>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-100 mt-20 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-slate-400 text-sm">Organização Grupo Aluandê</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentLang = 'pt';
+
+        const i18n = {
+            pt: {
+                days: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"],
+                categories: { kids: "Crianças", adults: "Adultos", general: "Geral", black: "Negros e Negras" },
+                ui: {
+                    search: "Filtrar por instrutor, cidade, país ou categoria...",
+                    emptyTitle: "Nenhuma aula encontrada",
+                    emptyDesc: "Tente buscar por um termo diferente.",
+                    online: "Online"
+                }
+            },
+            es: {
+                days: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+                categories: { kids: "Niños/as", adults: "Adultos", general: "General", black: "Negros y Negras" },
+                ui: {
+                    search: "Filtrar por instructor, ciudad, país o categoría...",
+                    emptyTitle: "No se encontraron clases",
+                    emptyDesc: "Intente buscar un término diferente.",
+                    online: "En línea"
+                }
+            },
+            en: {
+                days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                categories: { kids: "Kids", adults: "Adults", general: "General", black: "Black Community" },
+                ui: {
+                    search: "Filter by instructor, city, country or category...",
+                    emptyTitle: "No classes found",
+                    emptyDesc: "Try searching for a different term.",
+                    online: "Online"
+                }
+            }
+        };
+
+        const aulas = [
+            { prof: "Mestre Célio Gomes", cat: "adults", dias: [1, 3], horas: "18:30 - 20:00", local: "Fundição Progresso (Lapa, RJ)", tags: "brasil rio de janeiro presencial" },
+            { prof: "CM Joseph (Mestra Gegê)", cat: "general", dias: [0], horas: "07:00 - 08:00", local: "Online", tags: "online virtual" },
+            { prof: "Mestra Gegê", cat: "general", dias: [2, 4], horas: "07:00 - 08:00", local: "Online", tags: "online virtual" },
+            { prof: "CM Érida", cat: "kids", dias: [0, 2], horas: "17:00 - 18:00", local: "Quilombo Ferreira Diniz (Glória, RJ)", tags: "kids brasil rio de janeiro presencial" },
+            { prof: "CM Érida", cat: "adults", dias: [0, 2], horas: "18:00 - 19:30", local: "Quilombo Ferreira Diniz (Glória, RJ)", tags: "brasil rio de janeiro presencial" },
+            { prof: "CM Érida", cat: "adults", dias: [1, 3], horas: "07:30 - 09:00", local: "Online", tags: "online virtual" },
+            { prof: "CM Cristina", cat: "general", dias: [0], horas: "19:00", local: "A Corunha (Galiza, ES)", tags: "espanha galicia presencial" },
+            { prof: "CM Cristina", cat: "general", dias: [2], horas: "18:00", local: "Santiago de Compostela (ES)", tags: "espanha presencial" },
+            { prof: "CM Cristina", cat: "general", dias: [4], horas: "19:00", local: "Casa Comunitária Aluandê (S. Compostela)", tags: "espanha presencial" },
+            { prof: "Christian Medina", cat: "adults", dias: [1, 3, 5], horas: "09:00 - 10:30", local: "Plaza Los Próceres (Venezuela)", tags: "caracas venezuela presencial" },
+            { prof: "Christian Medina", cat: "adults", dias: [4], horas: "17:30 - 19:00", local: "Plaza Los Próceres (Venezuela)", tags: "caracas venezuela presencial" },
+            { prof: "Dav", cat: "general", dias: [3, 4], horas: "20:00 - 22:00", local: "El Cubo (México)", tags: "mexico cdmx presencial" },
+            { prof: "Baobá", cat: "black", dias: [1, 3], horas: "19:00", local: "Agbara Dudu (Osvaldo Cruz, RJ)", tags: "quilombo brasil rio de janeiro presencial" },
+            { prof: "Baobá", cat: "black", dias: [6], horas: "10:00", local: "Praça do Kaká (Campo Grande, RJ)", tags: "brasil rio de janeiro presencial" },
+            { prof: "Baobá", cat: "kids", dias: [4], horas: "17:00", local: "Ninho da Infância Afrikana (Estácio, RJ)", tags: "kids brasil rio de janeiro presencial" },
+            { prof: "Baobá", cat: "kids", dias: [5], horas: "08:00", local: "Ninho da Infância Afrikana (Estácio, RJ)", tags: "kids brasil rio de janeiro presencial" },
+            { prof: "Irene", cat: "adults", dias: [0, 1, 4], horas: "18:30 - 20:30", local: "Salta (Argentina)", tags: "argentina presencial" },
+            { prof: "Irene", cat: "kids", dias: [4], horas: "18:30 - 19:30", local: "Salta (Argentina)", tags: "kids argentina presencial" },
+            { prof: "Treinel Paulo", cat: "general", dias: [1, 3], horas: "19:00 - 21:00", local: "Valença (Bahia, BR)", tags: "brasil bahia presencial" },
+            { prof: "CM Fagnon", cat: "adults", dias: [0, 2, 4], horas: "19:00 - 20:30", local: "CCC Rua Menezes Vieira, 297 Cachambi (RJ)", tags: "brasil rio de janeiro cachambi presencial" }
+        ];
+
+        function changeLang(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+            
+            // Atualiza UI Fixa
+            document.getElementById('searchInput').placeholder = i18n[lang].ui.search;
+            document.getElementById('empty-title').innerText = i18n[lang].ui.emptyTitle;
+            document.getElementById('empty-desc').innerText = i18n[lang].ui.emptyDesc;
+            
+            renderLegends();
+            renderCalendar();
+        }
+
+        function renderLegends() {
+            const container = document.getElementById('legends');
+            const cat = i18n[currentLang].categories;
+            container.innerHTML = `
+                <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-xs font-semibold">
+                    <span class="w-2 h-2 bg-aluande rounded-full"></span> ${i18n[currentLang].ui.online}
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-xs font-semibold">
+                    <span class="w-2 h-2 bg-sky-400 rounded-full"></span> ${cat.kids}
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 text-xs font-semibold">
+                    <span class="w-2 h-2 bg-slate-300 rounded-full"></span> ${cat.adults}
+                </div>
+            `;
+        }
+
+        function renderCalendar() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const grid = document.getElementById('calendarGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+            
+            let totalFound = 0;
+            const days = i18n[currentLang].days;
+
+            days.forEach((dayName, index) => {
+                const aulasDoDia = aulas.filter(aula => {
+                    const matchDia = aula.dias.includes(index);
+                    const catLabel = i18n[currentLang].categories[aula.cat].toLowerCase();
+                    const matchSearch = aula.prof.toLowerCase().includes(searchTerm) || 
+                                        aula.local.toLowerCase().includes(searchTerm) ||
+                                        aula.tags.toLowerCase().includes(searchTerm) ||
+                                        catLabel.includes(searchTerm);
+                    return matchDia && matchSearch;
+                });
+
+                if (aulasDoDia.length > 0) {
+                    totalFound++;
+                    const section = document.createElement('div');
+                    section.className = 'bg-white rounded-2xl p-5 shadow-sm border border-slate-100';
+                    section.innerHTML = `<h2 class="text-xl font-bold text-aluande mb-4 border-b border-slate-50 pb-2">${dayName}${currentLang === 'pt' ? '-feira' : ''}</h2>`;
+
+                    aulasDoDia.forEach(aula => {
+                        const isOnline = aula.local.toLowerCase().includes('online') || aula.local.toLowerCase().includes('línea') || aula.local.toLowerCase().includes('line');
+                        const isKids = aula.cat === 'kids';
+                        
+                        const card = document.createElement('div');
+                        card.className = `class-card mb-4 p-3 rounded-lg border-l-4 ${isOnline ? 'border-aluande bg-blue-50/30' : (isKids ? 'border-sky-400 bg-sky-50/20' : 'border-slate-200')}`;
+                        card.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <span class="text-[10px] uppercase font-bold tracking-tighter text-slate-400">${i18n[currentLang].categories[aula.cat]}</span>
+                                <span class="text-xs font-bold text-aluande">${aula.horas}</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-sm mt-1">${aula.prof}</h3>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-tight"><span class="opacity-70">📍</span> ${aula.local}</p>
+                        `;
+                        section.appendChild(card);
+                    });
+                    grid.appendChild(section);
+                }
+            });
+
+            if (totalFound === 0) emptyState.classList.remove('hidden');
+            else emptyState.classList.add('hidden');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', renderCalendar);
+        
+        window.onload = () => changeLang('pt');
+    </script>
+</body>
+</html>
